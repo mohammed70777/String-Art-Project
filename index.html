@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>String Art Generator</title>
-  <!-- تحميل مكتبة p5.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
 </head>
 <body>
@@ -41,10 +40,10 @@
       strokeWeight(1); // سماكة الخطوط
 
       // رسم الخطوط
-      for (let line of lines) {
-        let start = nails[line[0]];
-        let end = nails[line[1]];
-        line(start.x, start.y, end.x, end.y);
+      for (let currentLine of lines) { // تغيير اسم المتغير
+        let start = nails[currentLine[0]];
+        let end = nails[currentLine[1]];
+        line(start.x, start.y, end.x, end.y); // رسم الخط
       }
 
       noLoop(); // توقف عن إعادة الرسم
