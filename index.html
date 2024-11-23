@@ -12,18 +12,18 @@
   </div>
   <div id="canvasContainer" style="text-align: center; margin-top: 20px;"></div>
   <script>
-    let img; // متغير لتحميل الصورة
-    const numLines = 1000; // عدد الخطوط المرسومة
-    const points = []; // نقاط الحدود التي سيستخدمها الرسم
+    let img; // لتخزين الصورة التي يتم تحميلها
+    const numLines = 1000; // عدد الخطوط التي سيتم رسمها
+    const points = []; // تخزين النقاط الحدودية للصورة
     let canvas;
 
     function setup() {
-      // إنشاء اللوحة وربطها بالعنصر الحاوي
+      // إعداد اللوحة
       canvas = createCanvas(800, 800);
       canvas.parent('canvasContainer');
 
-      // إعداد الخلفية مع النص الإرشادي
-      background(0); // خلفية سوداء
+      // إعداد خلفية اللوحة بالنص الإرشادي
+      background(0); // تعيين الخلفية إلى اللون الأسود
       textAlign(CENTER, CENTER);
       fill(255);
       textSize(20);
@@ -35,7 +35,7 @@
     }
 
     function draw() {
-      noLoop(); // إيقاف التكرار بعد الإطار الأول
+      noLoop(); // إيقاف التكرار
     }
 
     function handleImageUpload(event) {
@@ -46,22 +46,13 @@
           const imgElement = new Image();
           imgElement.src = e.target.result;
           imgElement.onload = function () {
-            // إنشاء صورة مع خاصية willReadFrequently
-            const offscreenCanvas = document.createElement('canvas');
-            const offscreenContext = offscreenCanvas.getContext('2d', { willReadFrequently: true });
-
-            offscreenCanvas.width = imgElement.width;
-            offscreenCanvas.height = imgElement.height;
-            offscreenContext.drawImage(imgElement, 0, 0);
-
-            // تحويل الصورة إلى صيغة p5.js
-            img = createImage(imgElement.width, imgElement.height);
-            img.drawingContext.drawImage(offscreenCanvas, 0, 0);
-            img.resize(800, 800);
-            img.filter(GRAY); // تحويل الصورة إلى الأبيض والأسود
-
-            generateBorderPoints(); // إنشاء النقاط الحدودية
-            drawStringArt(); // رسم التأثير
+            // تحميل الصورة إلى اللوحة
+            img = loadImage(imgElement.src, () => {
+              image(img, 0, 0, 800, 800); // عرض الصورة على اللوحة
+              img.filter(GRAY); // تحويل الصورة إلى الأبيض والأسود
+              generateBorderPoints(); // إنشاء النقاط الحدودية
+              drawStringArt(); // تطبيق تأثير الخيوط
+            });
           };
         };
         reader.readAsDataURL(file);
@@ -70,7 +61,7 @@
 
     function generateBorderPoints() {
       points.length = 0; // إعادة تعيين النقاط
-      const steps = 200; // عدد النقاط على الحدود
+      const steps = 200; // عدد النقاط الحدودية
       for (let i = 0; i < steps; i++) {
         // النقاط العلوية
         points.push({ x: (width / steps) * i, y: 0 });
@@ -84,7 +75,7 @@
     }
 
     function drawStringArt() {
-      background(0); // خلفية سوداء
+      background(0); // إعداد خلفية سوداء
       stroke(255); // لون الخطوط أبيض
       strokeWeight(0.5); // سماكة الخطوط
       noFill();
@@ -111,7 +102,7 @@
     }
 
     function getBrightnessValue(x, y) {
-      // استرجاع السطوع عند نقطة معينة
+      // حساب قيمة السطوع عند نقطة معينة
       const color = img.get(floor(x), floor(y));
       return brightness(color);
     }
