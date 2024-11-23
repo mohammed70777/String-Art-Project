@@ -18,19 +18,21 @@
     let canvas;
 
     function setup() {
-      canvas = createCanvas(800, 800); // إنشاء لوحة الرسم
-      canvas.parent('canvasContainer'); // ربط اللوحة بالحاوية
+      // إنشاء اللوحة وربطها بالعنصر الحاوي
+      canvas = createCanvas(800, 800);
+      canvas.parent('canvasContainer');
 
-      // تمكين willReadFrequently عند إنشاء السياق
+      // تمكين willReadFrequently لتحسين الأداء
       canvas.drawingContext = canvas.elt.getContext('2d', { willReadFrequently: true });
 
+      // إعداد خلفية اللوحة والنص الإرشادي
       background(0); // خلفية سوداء
       textAlign(CENTER, CENTER);
       fill(255);
       textSize(20);
       text("Select an image using the button above", width / 2, height / 2);
 
-      // ربط حدث تحميل الصورة بزر اختيار الصورة
+      // ربط زر تحميل الصورة مع الحدث
       const imageInput = document.getElementById('imageUpload');
       imageInput.addEventListener('change', handleImageUpload);
     }
@@ -47,12 +49,13 @@
           const imgElement = new Image();
           imgElement.src = e.target.result;
           imgElement.onload = function () {
+            // إنشاء صورة جديدة بناءً على الصورة المرفوعة
             img = createImage(imgElement.width, imgElement.height);
             img.drawingContext.drawImage(imgElement, 0, 0);
             img.resize(800, 800);
             img.filter(GRAY); // تحويل الصورة إلى الأبيض والأسود
-            generateBorderPoints(); // إنشاء نقاط الحدود
-            drawStringArt(); // رسم التأثير
+            generateBorderPoints(); // إنشاء النقاط الحدودية
+            drawStringArt(); // تطبيق تأثير الخيط والمسمار
           };
         };
         reader.readAsDataURL(file);
@@ -75,12 +78,12 @@
     }
 
     function drawStringArt() {
-      background(0); // خلفية سوداء
+      background(0); // إعداد خلفية سوداء
       stroke(255); // لون الخطوط أبيض
       strokeWeight(0.5); // سماكة الخطوط
       noFill();
 
-      let currentPoint = points[0]; // النقطة الابتدائية
+      let currentPoint = points[0]; // نقطة البداية
       for (let i = 0; i < numLines; i++) {
         let bestPoint;
         let bestValue = 0;
