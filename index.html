@@ -7,29 +7,55 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
 </head>
 <body>
+  <div style="text-align: center; margin-top: 20px;">
+    <input type="file" id="imageUpload" accept="image/*" />
+  </div>
   <script>
     let img; // متغير لتحميل الصورة
     const numLines = 1000; // عدد الخطوط المرسومة
     const points = []; // نقاط الحدود التي سيستخدمها الرسم
-
-    function preload() {
-      // تحميل الصورة المرفوعة
-      img = loadImage('image.jpg'); // استبدل الرابط بالصورة المرفوعة
-    }
+    let canvas;
 
     function setup() {
-      createCanvas(800, 800); // إنشاء لوحة الرسم
-      img.resize(800, 800); // إعادة تحجيم الصورة
-      img.filter(GRAY); // تحويل الصورة إلى الأبيض والأسود
-      generateBorderPoints(); // إنشاء نقاط الحدود
-      drawStringArt(); // رسم التأثير
+      canvas = createCanvas(800, 800); // إنشاء لوحة الرسم
+      canvas.parent('canvasContainer');
+      background(0); // خلفية سوداء
+      textAlign(CENTER, CENTER);
+      fill(255);
+      textSize(20);
+      text("Select an image using the button above", width / 2, height / 2);
+
+      // ربط حدث تحميل الصورة بزر اختيار الصورة
+      const imageInput = document.getElementById('imageUpload');
+      imageInput.addEventListener('change', handleImageUpload);
     }
 
     function draw() {
       noLoop(); // توقف الرسم بعد الإطار الأول
     }
 
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const imgElement = new Image();
+          imgElement.src = e.target.result;
+          imgElement.onload = function () {
+            img = createImage(imgElement.width, imgElement.height);
+            img.drawingContext.drawImage(imgElement, 0, 0);
+            img.resize(800, 800);
+            img.filter(GRAY); // تحويل الصورة إلى الأبيض والأسود
+            generateBorderPoints(); // إنشاء نقاط الحدود
+            drawStringArt(); // رسم التأثير
+          };
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
     function generateBorderPoints() {
+      points.length = 0; // إعادة تعيين النقاط
       const steps = 200; // عدد النقاط على الحدود
       for (let i = 0; i < steps; i++) {
         // النقاط العلوية
