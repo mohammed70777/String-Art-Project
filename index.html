@@ -9,18 +9,23 @@
 <body>
   <h1 style="text-align: center;">String Art Generator</h1>
   <div style="text-align: center; margin-bottom: 20px;">
+    <label>Number of Nails:</label>
+    <input type="number" id="numNailsInput" value="288" min="10" max="1000" step="1" style="width: 80px;">
+    <label>Number of Lines:</label>
+    <input type="number" id="numLinesInput" value="4000" min="10" max="10000" step="100" style="width: 80px;">
+    <br><br>
     <input type="file" id="imageInput" accept="image/*">
     <p>Upload an image to generate string art!</p>
+    <button id="startButton">Start Drawing</button>
   </div>
   <script>
     let img;
     let nails = [];
-    let numNails = 300; // عدد المسامير
     let lines = [];
-    let lineUsage = []; // تتبع عدد مرات استخدام كل مسمار
-    let numLines = 5000; // عدد الخطوط
+    let lineUsage = [];
+    let numNails = 288; // الافتراضي
+    let numLines = 4000; // الافتراضي
     let imageLoaded = false;
-    let progress = 0;
 
     function setup() {
       createCanvas(500, 500).parent(document.body);
@@ -30,29 +35,36 @@
       fill(0);
       text("Please upload an image to start", width / 2, height / 2);
 
+      document.getElementById('startButton').addEventListener('click', () => {
+        numNails = parseInt(document.getElementById('numNailsInput').value);
+        numLines = parseInt(document.getElementById('numLinesInput').value);
+        if (imageLoaded) {
+          generateStringArt();
+          redraw();
+        } else {
+          alert("Please upload an image first!");
+        }
+      });
+
       document.getElementById('imageInput').addEventListener('change', handleImageUpload);
     }
 
     function draw() {
-      if (!imageLoaded) return;
+      if (!imageLoaded || lines.length === 0) return;
 
       background(255);
       stroke(0);
       strokeWeight(1);
 
-      for (let i = 0; i < progress; i++) {
-        let [startIndex, endIndex] = lines[i];
+      // رسم الخطوط دفعة واحدة لتسريع الرسم
+      for (let [startIndex, endIndex] of lines) {
         let start = nails[startIndex];
         let end = nails[endIndex];
         line(start.x, start.y, end.x, end.y);
       }
 
-      if (progress < lines.length) {
-        progress++;
-      } else {
-        noLoop();
-        console.log("String art complete!");
-      }
+      noLoop();
+      console.log("String art complete!");
     }
 
     function handleImageUpload(event) {
@@ -66,8 +78,7 @@
             img.resize(500, 500);
             img.loadPixels();
             imageLoaded = true;
-            generateStringArt();
-            redraw();
+            console.log("Image loaded successfully!");
           }, () => {
             console.error("Failed to load uploaded image.");
           });
@@ -86,6 +97,7 @@
       let centerY = height / 2;
       let radius = min(width, height) / 2 - 20;
 
+      // إنشاء المسامير
       for (let i = 0; i < numNails; i++) {
         let angle = TWO_PI * i / numNails;
         let x = centerX + radius * cos(angle);
@@ -104,7 +116,7 @@
           if (j === currentNail) continue;
 
           let intensity = calculateLineIntensity(nails[currentNail], nails[j]);
-          let usagePenalty = lineUsage[j] * 0.1; // إضافة عقوبة لاختيار المسامير المكررة
+          let usagePenalty = lineUsage[j] * 0.1;
           let score = intensity - usagePenalty;
 
           if (score > bestScore) {
@@ -124,8 +136,6 @@
       }
 
       console.log("Lines generated:", lines.length);
-      progress = 0;
-      loop();
     }
 
     function calculateLineIntensity(start, end) {
