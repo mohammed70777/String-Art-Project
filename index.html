@@ -17,7 +17,7 @@
     let nails = []; // مواقع المسامير
     let numNails = 200; // عدد المسامير
     let lines = []; // الخطوط
-    let numLines = 5000; // عدد الخطوط (تم زيادته)
+    let numLines = 1000; // عدد الخطوط
     let imageLoaded = false; // حالة تحميل الصورة
     let progress = 0; // لتتبع التقدم في الرسم
 
@@ -40,19 +40,18 @@
       stroke(0); // لون الخطوط أسود
       strokeWeight(1); // سماكة الخطوط
 
-      // رسم الخطوط
+      // رسم الخطوط تدريجيًا
       for (let i = 0; i < progress; i++) {
-        let currentLine = lines[i];
-        let start = nails[currentLine[0]];
-        let end = nails[currentLine[1]];
+        let line = lines[i];
+        let start = nails[line[0]];
+        let end = nails[line[1]];
         line(start.x, start.y, end.x, end.y); // رسم الخط
       }
 
-      // عرض التقدم
       if (progress < lines.length) {
         progress++;
       } else {
-        noLoop(); // توقف عن إعادة الرسم عند اكتمال الشكل
+        noLoop(); // توقف عند اكتمال الرسم
         console.log("String art complete!");
       }
     }
@@ -68,9 +67,11 @@
             img.resize(500, 500); // تغيير حجم الصورة
             img.loadPixels(); // تحميل بيانات البكسلات
             imageLoaded = true; // تحديث حالة تحميل الصورة
-            console.log('Image loaded successfully');
+            console.log("Image loaded successfully");
             generateStringArt(); // توليد فن الخيوط
             redraw(); // إعادة الرسم
+          }, () => {
+            console.error("Failed to load the image.");
           });
         };
 
@@ -94,7 +95,7 @@
         nails.push(createVector(x, y));
       }
 
-      console.log('Nails generated:', nails.length);
+      console.log("Nails generated:", nails.length);
 
       // توليد الخطوط بين المسامير
       let currentNail = 0;
@@ -116,7 +117,7 @@
         currentNail = bestNail;
       }
 
-      console.log('Lines generated:', lines.length);
+      console.log("Lines generated:", lines.length);
       progress = 0; // إعادة ضبط التقدم
       loop(); // تفعيل الرسم
     }
@@ -137,6 +138,8 @@
       let err = dx - dy;
 
       while (true) {
+        if (x1 < 0 || x1 >= img.width || y1 < 0 || y1 >= img.height) break;
+
         let index = (y1 * img.width + x1) * 4; // الوصول إلى البكسل
         let brightness = img.pixels[index]; // الحصول على شدة اللون
         sum += brightness;
@@ -154,7 +157,7 @@
         }
       }
 
-      return sum / count;
+      return sum / count || 0; // تجنب القيم غير المعرفة
     }
   </script>
 </body>
