@@ -13,45 +13,54 @@
     <p>Upload an image to generate string art!</p>
   </div>
   <script>
-    let img; // الصورة المحملة
-    let nails = []; // مواقع المسامير
-    let numNails = 200; // عدد المسامير
-    let lines = []; // الخطوط
-    let numLines = 1000; // عدد الخطوط
-    let imageLoaded = false; // حالة تحميل الصورة
-    let progress = 0; // لتتبع التقدم في الرسم
+    let img;
+    let nails = [];
+    let numNails = 200;
+    let lines = [];
+    let numLines = 1000;
+    let imageLoaded = false;
+    let progress = 0;
+
+    function preload() {
+      // تحميل الصورة الافتراضية إذا لم يرفع المستخدم صورة
+      img = loadImage('default.jpg', () => {
+        console.log('Default image loaded successfully');
+        imageLoaded = true;
+        generateStringArt();
+      }, () => {
+        console.warn('Default image not found, waiting for user upload.');
+      });
+    }
 
     function setup() {
-      createCanvas(500, 500).parent(document.body); // إنشاء اللوحة
-      background(220); // خلفية رمادية افتراضية
+      createCanvas(500, 500).parent(document.body);
+      background(220);
       textAlign(CENTER, CENTER);
       textSize(16);
       fill(0);
       text("Please upload an image to start", width / 2, height / 2);
 
-      // إضافة حدث عند رفع الصورة
       document.getElementById('imageInput').addEventListener('change', handleImageUpload);
     }
 
     function draw() {
-      if (!imageLoaded) return; // إذا لم يتم تحميل الصورة، لا تقم بالرسم
+      if (!imageLoaded) return;
 
-      background(255); // خلفية بيضاء
-      stroke(0); // لون الخطوط أسود
-      strokeWeight(1); // سماكة الخطوط
+      background(255);
+      stroke(0);
+      strokeWeight(1);
 
-      // رسم الخطوط تدريجيًا
       for (let i = 0; i < progress; i++) {
-        let line = lines[i];
-        let start = nails[line[0]];
-        let end = nails[line[1]];
-        line(start.x, start.y, end.x, end.y); // رسم الخط
+        let currentLine = lines[i];
+        let start = nails[currentLine[0]];
+        let end = nails[currentLine[1]];
+        line(start.x, start.y, end.x, end.y);
       }
 
       if (progress < lines.length) {
         progress++;
       } else {
-        noLoop(); // توقف عند اكتمال الرسم
+        noLoop();
         console.log("String art complete!");
       }
     }
@@ -63,15 +72,14 @@
 
         reader.onload = (e) => {
           loadImage(e.target.result, (loadedImage) => {
-            img = loadedImage; // تحميل الصورة إلى المتغير
-            img.resize(500, 500); // تغيير حجم الصورة
-            img.loadPixels(); // تحميل بيانات البكسلات
-            imageLoaded = true; // تحديث حالة تحميل الصورة
-            console.log("Image loaded successfully");
-            generateStringArt(); // توليد فن الخيوط
-            redraw(); // إعادة الرسم
+            img = loadedImage;
+            img.resize(500, 500);
+            img.loadPixels();
+            imageLoaded = true;
+            generateStringArt();
+            redraw();
           }, () => {
-            console.error("Failed to load the image.");
+            console.error("Failed to load uploaded image.");
           });
         };
 
@@ -80,10 +88,8 @@
     }
 
     function generateStringArt() {
-      nails = []; // إعادة ضبط المسامير
-      lines = []; // إعادة ضبط الخطوط
-
-      // توليد المسامير على شكل دائرة
+      nails = [];
+      lines = [];
       let centerX = width / 2;
       let centerY = height / 2;
       let radius = min(width, height) / 2 - 20;
@@ -95,9 +101,6 @@
         nails.push(createVector(x, y));
       }
 
-      console.log("Nails generated:", nails.length);
-
-      // توليد الخطوط بين المسامير
       let currentNail = 0;
       for (let i = 0; i < numLines; i++) {
         let bestNail = 0;
@@ -118,8 +121,8 @@
       }
 
       console.log("Lines generated:", lines.length);
-      progress = 0; // إعادة ضبط التقدم
-      loop(); // تفعيل الرسم
+      progress = 0;
+      loop();
     }
 
     function calculateLineIntensity(start, end) {
@@ -140,8 +143,8 @@
       while (true) {
         if (x1 < 0 || x1 >= img.width || y1 < 0 || y1 >= img.height) break;
 
-        let index = (y1 * img.width + x1) * 4; // الوصول إلى البكسل
-        let brightness = img.pixels[index]; // الحصول على شدة اللون
+        let index = (y1 * img.width + x1) * 4;
+        let brightness = img.pixels[index];
         sum += brightness;
         count++;
 
@@ -157,7 +160,7 @@
         }
       }
 
-      return sum / count || 0; // تجنب القيم غير المعرفة
+      return sum / count || 0;
     }
   </script>
 </body>
