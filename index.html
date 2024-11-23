@@ -10,6 +10,7 @@
   <div style="text-align: center; margin-top: 20px;">
     <input type="file" id="imageUpload" accept="image/*" />
   </div>
+  <div id="canvasContainer" style="text-align: center; margin-top: 20px;"></div>
   <script>
     let img; // متغير لتحميل الصورة
     const numLines = 1000; // عدد الخطوط المرسومة
@@ -18,7 +19,7 @@
 
     function setup() {
       canvas = createCanvas(800, 800); // إنشاء لوحة الرسم
-      canvas.parent('canvasContainer');
+      canvas.parent('canvasContainer'); // ربط اللوحة بالحاوية
       background(0); // خلفية سوداء
       textAlign(CENTER, CENTER);
       fill(255);
