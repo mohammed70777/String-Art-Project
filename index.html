@@ -1,46 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>String Art Generator</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <script async src="opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
 </head>
 <body>
-  <h1 style="text-align: center;">String Art Generator</h1>
-  <div style="text-align: center; margin-bottom: 20px;">
-    <label>Number of Nails:</label>
-    <input type="number" id="numNailsInput" value="288" min="10" max="1000" step="1" style="width: 80px;">
-    <label>Number of Lines:</label>
-    <input type="number" id="numLinesInput" value="4000" min="10" max="10000" step="100" style="width: 80px;">
-    <br><br>
-    <input type="file" id="imageInput" accept="image/*">
-    <p>Upload an image to generate string art!</p>
-    <button id="startButton">Start Drawing</button>
+  <div class="container">
+    <div class="jumbotron">
+      <h1 class="text-center">String Art Generator</h1>
+      <p class="text-center">Upload an image and adjust the settings to generate your art!</p>
+      <div class="row">
+        <div class="col-md-4">
+          <label for="numNailsInput">Number of Pins</label>
+          <input type="number" id="numNailsInput" class="form-control" value="288" min="10" max="1000">
+        </div>
+        <div class="col-md-4">
+          <label for="numLinesInput">Number of Lines</label>
+          <input type="number" id="numLinesInput" class="form-control" value="4000" min="100" max="10000">
+        </div>
+        <div class="col-md-4">
+          <label for="lineWeightInput">Line Weight</label>
+          <input type="number" id="lineWeightInput" class="form-control" value="1" min="1" max="10">
+        </div>
+      </div>
+      <div class="text-center mt-4">
+        <input type="file" id="imageInput" accept="image/*" class="btn btn-primary">
+        <button id="startButton" class="btn btn-success">Generate String Art</button>
+      </div>
+      <p id="status" class="text-center mt-3">Status: Waiting for input...</p>
+    </div>
+    <canvas id="outputCanvas" class="d-block mx-auto" width="500" height="500"></canvas>
   </div>
+
   <script>
-    let img;
+    let img; // Image to process
     let nails = [];
     let lines = [];
-    let lineUsage = [];
-    let numNails = 288; // الافتراضي
-    let numLines = 4000; // الافتراضي
+    let numNails = 288; // Default number of nails
+    let numLines = 4000; // Default number of lines
+    let lineWeight = 1; // Default line weight
     let imageLoaded = false;
 
     function setup() {
-      createCanvas(500, 500).parent(document.body);
-      background(220);
-      textAlign(CENTER, CENTER);
-      textSize(16);
-      fill(0);
-      text("Please upload an image to start", width / 2, height / 2);
-
+      noCanvas();
       document.getElementById('startButton').addEventListener('click', () => {
         numNails = parseInt(document.getElementById('numNailsInput').value);
         numLines = parseInt(document.getElementById('numLinesInput').value);
+        lineWeight = parseInt(document.getElementById('lineWeightInput').value);
+
         if (imageLoaded) {
           generateStringArt();
-          redraw();
         } else {
           alert("Please upload an image first!");
         }
@@ -49,63 +63,40 @@
       document.getElementById('imageInput').addEventListener('change', handleImageUpload);
     }
 
-    function draw() {
-      if (!imageLoaded || lines.length === 0) return;
-
-      background(255);
-      stroke(0);
-      strokeWeight(1);
-
-      // رسم الخطوط دفعة واحدة لتسريع الرسم
-      for (let [startIndex, endIndex] of lines) {
-        let start = nails[startIndex];
-        let end = nails[endIndex];
-        line(start.x, start.y, end.x, end.y);
-      }
-
-      noLoop();
-      console.log("String art complete!");
-    }
-
     function handleImageUpload(event) {
       const file = event.target.files[0];
       if (file) {
         const reader = new FileReader();
-
         reader.onload = (e) => {
           loadImage(e.target.result, (loadedImage) => {
             img = loadedImage;
             img.resize(500, 500);
             img.loadPixels();
             imageLoaded = true;
-            console.log("Image loaded successfully!");
+            document.getElementById('status').textContent = "Image loaded successfully!";
           }, () => {
-            console.error("Failed to load uploaded image.");
+            console.error("Failed to load image.");
           });
         };
-
         reader.readAsDataURL(file);
       }
     }
 
     function generateStringArt() {
+      document.getElementById('status').textContent = "Generating string art...";
       nails = [];
       lines = [];
-      lineUsage = Array(numNails).fill(0);
 
-      let centerX = width / 2;
-      let centerY = height / 2;
-      let radius = min(width, height) / 2 - 20;
+      let centerX = 250;
+      let centerY = 250;
+      let radius = 200;
 
-      // إنشاء المسامير
       for (let i = 0; i < numNails; i++) {
         let angle = TWO_PI * i / numNails;
         let x = centerX + radius * cos(angle);
         let y = centerY + radius * sin(angle);
-        nails.push(createVector(x, y));
+        nails.push({ x, y });
       }
-
-      console.log("Nails generated:", nails.length);
 
       let currentNail = 0;
       for (let i = 0; i < numLines; i++) {
@@ -116,52 +107,44 @@
           if (j === currentNail) continue;
 
           let intensity = calculateLineIntensity(nails[currentNail], nails[j]);
-          let usagePenalty = lineUsage[j] * 0.1;
-          let score = intensity - usagePenalty;
-
-          if (score > bestScore) {
-            bestScore = score;
+          if (intensity > bestScore) {
+            bestScore = intensity;
             bestNail = j;
           }
         }
 
         if (bestNail >= 0) {
           lines.push([currentNail, bestNail]);
-          lineUsage[bestNail]++;
-          lineUsage[currentNail]++;
           currentNail = bestNail;
         } else {
           break;
         }
       }
 
-      console.log("Lines generated:", lines.length);
+      drawStringArt();
     }
 
     function calculateLineIntensity(start, end) {
-      let x1 = floor(start.x);
-      let y1 = floor(start.y);
-      let x2 = floor(end.x);
-      let y2 = floor(end.y);
+      let x1 = Math.floor(start.x);
+      let y1 = Math.floor(start.y);
+      let x2 = Math.floor(end.x);
+      let y2 = Math.floor(end.y);
 
-      let sum = 0;
-      let count = 0;
+      let dx = Math.abs(x2 - x1);
+      let dy = Math.abs(y2 - y1);
 
-      let dx = abs(x2 - x1);
-      let dy = abs(y2 - y1);
-      let sx = (x1 < x2) ? 1 : -1;
-      let sy = (y1 < y2) ? 1 : -1;
+      let sx = x1 < x2 ? 1 : -1;
+      let sy = y1 < y2 ? 1 : -1;
       let err = dx - dy;
 
-      while (true) {
-        if (x1 < 0 || x1 >= img.width || y1 < 0 || y1 >= img.height) break;
+      let sum = 0;
 
+      while (true) {
         let index = (y1 * img.width + x1) * 4;
-        let brightness = 255 - img.pixels[index];
-        sum += brightness;
-        count++;
+        sum += 255 - img.pixels[index];
 
         if (x1 === x2 && y1 === y2) break;
+
         let e2 = err * 2;
         if (e2 > -dy) {
           err -= dy;
@@ -173,7 +156,28 @@
         }
       }
 
-      return sum / count || 0;
+      return sum;
+    }
+
+    function drawStringArt() {
+      const canvas = document.getElementById('outputCanvas');
+      const ctx = canvas.getContext('2d');
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = lineWeight;
+
+      for (let [startIdx, endIdx] of lines) {
+        const start = nails[startIdx];
+        const end = nails[endIdx];
+
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+
+      document.getElementById('status').textContent = "String art complete!";
     }
   </script>
 </body>
