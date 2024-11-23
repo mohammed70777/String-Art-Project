@@ -4,34 +4,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>String Art</title>
+  <!-- تحميل مكتبة p5.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
 </head>
 <body>
+  <h1 style="text-align: center;">String Art Generator</h1>
+  <div style="text-align: center; margin-bottom: 20px;">
+    <input type="file" id="imageInput" accept="image/*">
+  </div>
   <script>
-    let img; // لتحميل الصورة
-    let nails = []; // لتخزين مواقع المسامير
+    let img; // الصورة المحملة
+    let nails = []; // مواقع المسامير
     let numNails = 200; // عدد المسامير
-    let lines = []; // لتخزين الخطوط بين المسامير
-    let numLines = 1000; // عدد الخطوط في الشكل النهائي
-
-    function preload() {
-      // تحميل الصورة
-      img = loadImage('image.jpg', () => {
-        console.log('Image loaded successfully');
-      }, () => {
-        console.error('Failed to load image. Make sure the image file is in the correct location.');
-      });
-    }
+    let lines = []; // الخطوط
+    let numLines = 500; // عدد الخطوط
+    let imageLoaded = false; // حالة تحميل الصورة
 
     function setup() {
-      // إعداد اللوحة والرسم
-      createCanvas(500, 500);
-      img.resize(500, 500);
-      img.loadPixels();
+      createCanvas(500, 500); // إنشاء اللوحة
+      background(220); // خلفية رمادية افتراضية
+      textAlign(CENTER, CENTER);
+      textSize(16);
+      text("Please upload an image to start", width / 2, height / 2);
 
-      console.log('Canvas created');
+      // إضافة حدث عند رفع الصورة
+      document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+    }
 
-      // توليد المسامير
+    function draw() {
+      if (!imageLoaded) return; // إذا لم يتم تحميل الصورة، لا تقم بالرسم
+
+      background(255); // خلفية بيضاء
+      stroke(0); // لون الخطوط أسود
+      strokeWeight(1); // سماكة الخطوط
+
+      // رسم الخطوط
+      for (let line of lines) {
+        let start = nails[line[0]];
+        let end = nails[line[1]];
+        line(start.x, start.y, end.x, end.y);
+      }
+
+      noLoop(); // توقف عن إعادة الرسم
+    }
+
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+          loadImage(e.target.result, (loadedImage) => {
+            img = loadedImage; // تحميل الصورة إلى المتغير
+            img.resize(500, 500); // تغيير حجم الصورة
+            img.loadPixels(); // تحميل بيانات البكسلات
+            imageLoaded = true; // تحديث حالة تحميل الصورة
+            console.log('Image loaded successfully');
+            generateStringArt(); // توليد فن الخيوط
+            redraw(); // إعادة الرسم
+          });
+        };
+
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function generateStringArt() {
+      nails = []; // إعادة ضبط المسامير
+      lines = []; // إعادة ضبط الخطوط
+
+      // توليد المسامير على شكل دائرة
       let centerX = width / 2;
       let centerY = height / 2;
       let radius = min(width, height) / 2 - 20;
@@ -42,6 +84,7 @@
         let y = centerY + radius * sin(angle);
         nails.push(createVector(x, y));
       }
+
       console.log('Nails generated:', nails.length);
 
       // توليد الخطوط بين المسامير
@@ -63,27 +106,11 @@
         lines.push([currentNail, bestNail]);
         currentNail = bestNail;
       }
+
       console.log('Lines generated:', lines.length);
     }
 
-    function draw() {
-      // رسم الشكل النهائي
-      background(255); // خلفية بيضاء
-      stroke(0); // لون الخطوط أسود
-      strokeWeight(1); // سماكة الخطوط
-
-      for (let line of lines) {
-        let start = nails[line[0]];
-        let end = nails[line[1]];
-        line(start.x, start.y, end.x, end.y);
-      }
-
-      console.log('String art drawn');
-      noLoop(); // منع إعادة التحديث
-    }
-
     function calculateLineIntensity(start, end) {
-      // حساب شدة اللون على طول الخط
       let x1 = floor(start.x);
       let y1 = floor(start.y);
       let x2 = floor(end.x);
