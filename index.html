@@ -15,10 +15,10 @@
   <script>
     let img;
     let nails = [];
-    let numNails = 300;
+    let numNails = 300; // عدد المسامير
     let lines = [];
-    let usedPairs = new Set(); // لتجنب تكرار الخطوط
-    let numLines = 10000;
+    let lineUsage = []; // تتبع عدد مرات استخدام كل مسمار
+    let numLines = 5000; // عدد الخطوط
     let imageLoaded = false;
     let progress = 0;
 
@@ -80,7 +80,7 @@
     function generateStringArt() {
       nails = [];
       lines = [];
-      usedPairs.clear();
+      lineUsage = Array(numNails).fill(0);
 
       let centerX = width / 2;
       let centerY = height / 2;
@@ -98,25 +98,25 @@
       let currentNail = 0;
       for (let i = 0; i < numLines; i++) {
         let bestNail = -1;
-        let bestIntensity = 0;
+        let bestScore = -Infinity;
 
         for (let j = 0; j < nails.length; j++) {
           if (j === currentNail) continue;
 
-          let pairKey = `${currentNail}-${j}`;
-          if (usedPairs.has(pairKey)) continue; // تجاهل الخطوط المكررة
-
           let intensity = calculateLineIntensity(nails[currentNail], nails[j]);
-          if (intensity > bestIntensity) {
-            bestIntensity = intensity;
+          let usagePenalty = lineUsage[j] * 0.1; // إضافة عقوبة لاختيار المسامير المكررة
+          let score = intensity - usagePenalty;
+
+          if (score > bestScore) {
+            bestScore = score;
             bestNail = j;
           }
         }
 
         if (bestNail >= 0) {
           lines.push([currentNail, bestNail]);
-          usedPairs.add(`${currentNail}-${bestNail}`);
-          usedPairs.add(`${bestNail}-${currentNail}`); // تأكد من عدم تكرار الاتجاه المعاكس
+          lineUsage[bestNail]++;
+          lineUsage[currentNail]++;
           currentNail = bestNail;
         } else {
           break;
