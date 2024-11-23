@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>String Art</title>
+  <title>String Art Generator</title>
   <!-- تحميل مكتبة p5.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
 </head>
@@ -11,6 +11,7 @@
   <h1 style="text-align: center;">String Art Generator</h1>
   <div style="text-align: center; margin-bottom: 20px;">
     <input type="file" id="imageInput" accept="image/*">
+    <p>Upload an image to generate string art!</p>
   </div>
   <script>
     let img; // الصورة المحملة
@@ -21,10 +22,11 @@
     let imageLoaded = false; // حالة تحميل الصورة
 
     function setup() {
-      createCanvas(500, 500); // إنشاء اللوحة
+      createCanvas(500, 500).parent(document.body); // إنشاء اللوحة
       background(220); // خلفية رمادية افتراضية
       textAlign(CENTER, CENTER);
       textSize(16);
+      fill(0);
       text("Please upload an image to start", width / 2, height / 2);
 
       // إضافة حدث عند رفع الصورة
