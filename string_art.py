@@ -1,82 +1,109 @@
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>String Art</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+</head>
+<body>
+  <script>
+    let img;
+    let nails = [];
+    let numNails = 200;
+    let lines = [];
+    let numLines = 1000;
 
-# تحميل الصورة وتحويلها إلى تدرج رمادي
-def load_image(image_path, size=(500, 500)):
-    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    img = cv2.resize(img, size)  # تغيير الحجم
-    return img
+    function preload() {
+      img = loadImage('your-image.jpg'); // تأكد من رفع الصورة في نفس المجلد
+    }
 
-# توليد المسامير على حواف الشكل
-def generate_nails(image, num_nails=200, shape='circle'):
-    h, w = image.shape
-    center = (w // 2, h // 2)
-    radius = min(h, w) // 2 - 20
+    function setup() {
+      createCanvas(500, 500);
+      img.resize(500, 500);
+      img.loadPixels();
 
-    nails = []
-    if shape == 'circle':
-        for i in range(num_nails):
-            angle = 2 * np.pi * i / num_nails
-            x = int(center[0] + radius * np.cos(angle))
-            y = int(center[1] + radius * np.sin(angle))
-            nails.append((x, y))
-    elif shape == 'square':
-        side = np.linspace(0, 1, num_nails // 4, endpoint=False)
-        for x in side:
-            nails.append((int(x * w), 0))  # الحافة العلوية
-        for y in side:
-            nails.append((w - 1, int(y * h)))  # الحافة اليمنى
-        for x in reversed(side):
-            nails.append((int(x * w), h - 1))  # الحافة السفلية
-        for y in reversed(side):
-            nails.append((0, int(y * h)))  # الحافة اليسرى
-    return nails
+      // توليد المسامير بشكل دائرة
+      let centerX = width / 2;
+      let centerY = height / 2;
+      let radius = min(width, height) / 2 - 20;
 
-# رسم الخطوط بين النقاط مع تحسين الأداء
-def create_string_art(image, nails, num_lines=1000):
-    h, w = image.shape
-    lines = []
-    current_nail = 0
-    mask = np.zeros_like(image)  # لتحسين الأداء
-    for _ in range(num_lines):
-        intensities = []
-        for i, (x, y) in enumerate(nails):
-            line_mask = np.zeros_like(image)
-            cv2.line(line_mask, nails[current_nail], (x, y), 255, 1)
-            combined_mask = cv2.bitwise_and(line_mask, cv2.bitwise_not(mask))
-            intensity = cv2.mean(image, mask=combined_mask)[0]
-            intensities.append((intensity, i))
+      for (let i = 0; i < numNails; i++) {
+        let angle = TWO_PI * i / numNails;
+        let x = centerX + radius * cos(angle);
+        let y = centerY + radius * sin(angle);
+        nails.push(createVector(x, y));
+      }
 
-        next_nail = max(intensities, key=lambda x: x[0])[1]
-        lines.append((current_nail, next_nail))
-        cv2.line(mask, nails[current_nail], nails[next_nail], 255, 1)  # تحديث القناع
-        current_nail = next_nail
-    return lines
+      // توليد الخطوط
+      let currentNail = 0;
+      for (let i = 0; i < numLines; i++) {
+        let bestNail = 0;
+        let bestIntensity = 0;
 
-# رسم الشكل النهائي
-def draw_string_art(image, nails, lines, line_thickness=1):
-    output = np.ones_like(image) * 255
-    for start, end in lines:
-        cv2.line(output, nails[start], nails[end], 0, line_thickness)
-    return output
+        for (let j = 0; j < nails.length; j++) {
+          if (j === currentNail) continue;
 
-# حفظ الصورة النهائية
-def save_output(output, filename):
-    cv2.imwrite(filename, output)
+          let intensity = calculateLineIntensity(nails[currentNail], nails[j]);
+          if (intensity > bestIntensity) {
+            bestIntensity = intensity;
+            bestNail = j;
+          }
+        }
 
-# تنفيذ الخطوات
-image_path = "/mnt/data/1.jpg"  # ضع مسار الصورة هنا
-output_path = "/mnt/data/string_art_output.jpg"  # مسار الحفظ
+        lines.push([currentNail, bestNail]);
+        currentNail = bestNail;
+      }
+    }
 
-image = load_image(image_path)
-nails = generate_nails(image, num_nails=200, shape='square')  # يمكن تغيير الشكل إلى 'circle' أو 'square'
-lines = create_string_art(image, nails, num_lines=1000)
-output = draw_string_art(image, nails, lines)
+    function draw() {
+      background(255);
+      stroke(0);
 
-# عرض وحفظ النتيجة
-plt.imshow(output, cmap='gray')
-plt.axis('off')
-plt.show()
-save_output(output, output_path)
-print(f"تم حفظ النتيجة في: {output_path}")
+      for (let line of lines) {
+        let start = nails[line[0]];
+        let end = nails[line[1]];
+        line(start.x, start.y, end.x, end.y);
+      }
+
+      noLoop(); // وقف التحديث بعد رسم الشكل
+    }
+
+    function calculateLineIntensity(start, end) {
+      let x1 = floor(start.x);
+      let y1 = floor(start.y);
+      let x2 = floor(end.x);
+      let y2 = floor(end.y);
+
+      let sum = 0;
+      let count = 0;
+
+      let dx = abs(x2 - x1);
+      let dy = abs(y2 - y1);
+      let sx = (x1 < x2) ? 1 : -1;
+      let sy = (y1 < y2) ? 1 : -1;
+      let err = dx - dy;
+
+      while (true) {
+        let index = (y1 * img.width + x1) * 4;
+        let brightness = img.pixels[index];
+        sum += brightness;
+        count++;
+
+        if (x1 === x2 && y1 === y2) break;
+        let e2 = err * 2;
+        if (e2 > -dy) {
+          err -= dy;
+          x1 += sx;
+        }
+        if (e2 < dx) {
+          err += dx;
+          y1 += sy;
+        }
+      }
+
+      return sum / count;
+    }
+  </script>
+</body>
+</html>
