@@ -8,22 +8,30 @@
 </head>
 <body>
   <script>
-    let img;
-    let nails = [];
-    let numNails = 200;
-    let lines = [];
-    let numLines = 1000;
+    let img; // لتحميل الصورة
+    let nails = []; // لتخزين مواقع المسامير
+    let numNails = 200; // عدد المسامير
+    let lines = []; // لتخزين الخطوط بين المسامير
+    let numLines = 1000; // عدد الخطوط في الشكل النهائي
 
     function preload() {
-      img = loadImage('your-image.jpg'); // تأكد من رفع الصورة في نفس المجلد
+      // تحميل الصورة
+      img = loadImage('image.jpg', () => {
+        console.log('Image loaded successfully');
+      }, () => {
+        console.error('Failed to load image. Make sure the image file is in the correct location.');
+      });
     }
 
     function setup() {
+      // إعداد اللوحة والرسم
       createCanvas(500, 500);
       img.resize(500, 500);
       img.loadPixels();
 
-      // توليد المسامير بشكل دائرة
+      console.log('Canvas created');
+
+      // توليد المسامير
       let centerX = width / 2;
       let centerY = height / 2;
       let radius = min(width, height) / 2 - 20;
@@ -34,8 +42,9 @@
         let y = centerY + radius * sin(angle);
         nails.push(createVector(x, y));
       }
+      console.log('Nails generated:', nails.length);
 
-      // توليد الخطوط
+      // توليد الخطوط بين المسامير
       let currentNail = 0;
       for (let i = 0; i < numLines; i++) {
         let bestNail = 0;
@@ -54,11 +63,14 @@
         lines.push([currentNail, bestNail]);
         currentNail = bestNail;
       }
+      console.log('Lines generated:', lines.length);
     }
 
     function draw() {
-      background(255);
-      stroke(0);
+      // رسم الشكل النهائي
+      background(255); // خلفية بيضاء
+      stroke(0); // لون الخطوط أسود
+      strokeWeight(1); // سماكة الخطوط
 
       for (let line of lines) {
         let start = nails[line[0]];
@@ -66,10 +78,12 @@
         line(start.x, start.y, end.x, end.y);
       }
 
-      noLoop(); // وقف التحديث بعد رسم الشكل
+      console.log('String art drawn');
+      noLoop(); // منع إعادة التحديث
     }
 
     function calculateLineIntensity(start, end) {
+      // حساب شدة اللون على طول الخط
       let x1 = floor(start.x);
       let y1 = floor(start.y);
       let x2 = floor(end.x);
@@ -85,8 +99,8 @@
       let err = dx - dy;
 
       while (true) {
-        let index = (y1 * img.width + x1) * 4;
-        let brightness = img.pixels[index];
+        let index = (y1 * img.width + x1) * 4; // الوصول إلى البكسل
+        let brightness = img.pixels[index]; // الحصول على شدة اللون
         sum += brightness;
         count++;
 
