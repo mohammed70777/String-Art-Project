@@ -15,22 +15,11 @@
   <script>
     let img;
     let nails = [];
-    let numNails = 200;
+    let numNails = 300; // عدد المسامير
     let lines = [];
-    let numLines = 1000;
+    let numLines = 5000; // عدد الخطوط
     let imageLoaded = false;
     let progress = 0;
-
-    function preload() {
-      // تحميل الصورة الافتراضية إذا لم يرفع المستخدم صورة
-      img = loadImage('default.jpg', () => {
-        console.log('Default image loaded successfully');
-        imageLoaded = true;
-        generateStringArt();
-      }, () => {
-        console.warn('Default image not found, waiting for user upload.');
-      });
-    }
 
     function setup() {
       createCanvas(500, 500).parent(document.body);
@@ -90,6 +79,7 @@
     function generateStringArt() {
       nails = [];
       lines = [];
+
       let centerX = width / 2;
       let centerY = height / 2;
       let radius = min(width, height) / 2 - 20;
@@ -101,9 +91,11 @@
         nails.push(createVector(x, y));
       }
 
+      console.log("Nails generated:", nails.length);
+
       let currentNail = 0;
       for (let i = 0; i < numLines; i++) {
-        let bestNail = 0;
+        let bestNail = -1;
         let bestIntensity = 0;
 
         for (let j = 0; j < nails.length; j++) {
@@ -116,8 +108,12 @@
           }
         }
 
-        lines.push([currentNail, bestNail]);
-        currentNail = bestNail;
+        if (bestNail >= 0) {
+          lines.push([currentNail, bestNail]);
+          currentNail = bestNail;
+        } else {
+          break;
+        }
       }
 
       console.log("Lines generated:", lines.length);
@@ -144,7 +140,7 @@
         if (x1 < 0 || x1 >= img.width || y1 < 0 || y1 >= img.height) break;
 
         let index = (y1 * img.width + x1) * 4;
-        let brightness = img.pixels[index];
+        let brightness = 255 - img.pixels[index];
         sum += brightness;
         count++;
 
