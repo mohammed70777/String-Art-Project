@@ -17,8 +17,9 @@
     let nails = []; // مواقع المسامير
     let numNails = 200; // عدد المسامير
     let lines = []; // الخطوط
-    let numLines = 500; // عدد الخطوط
+    let numLines = 5000; // عدد الخطوط (تم زيادته)
     let imageLoaded = false; // حالة تحميل الصورة
+    let progress = 0; // لتتبع التقدم في الرسم
 
     function setup() {
       createCanvas(500, 500).parent(document.body); // إنشاء اللوحة
@@ -40,13 +41,20 @@
       strokeWeight(1); // سماكة الخطوط
 
       // رسم الخطوط
-      for (let currentLine of lines) { // تغيير اسم المتغير
+      for (let i = 0; i < progress; i++) {
+        let currentLine = lines[i];
         let start = nails[currentLine[0]];
         let end = nails[currentLine[1]];
         line(start.x, start.y, end.x, end.y); // رسم الخط
       }
 
-      noLoop(); // توقف عن إعادة الرسم
+      // عرض التقدم
+      if (progress < lines.length) {
+        progress++;
+      } else {
+        noLoop(); // توقف عن إعادة الرسم عند اكتمال الشكل
+        console.log("String art complete!");
+      }
     }
 
     function handleImageUpload(event) {
@@ -109,6 +117,8 @@
       }
 
       console.log('Lines generated:', lines.length);
+      progress = 0; // إعادة ضبط التقدم
+      loop(); // تفعيل الرسم
     }
 
     function calculateLineIntensity(start, end) {
