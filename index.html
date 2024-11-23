@@ -1,183 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>String Art Generator</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
-  <script async src="opencv.js" onload="onOpenCvReady();" type="text/javascript"></script>
-  <script src="https://cdn.jsdelivr.net/gh/nicolaspanel/numjs@0.15.1/dist/numjs.min.js"></script>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <title>String Art Effect</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="jumbotron">
-      <h1 class="text-center">String Art Generator</h1>
-      <p class="text-center">Upload an image and adjust the settings to generate your art!</p>
-      <div class="row">
-        <div class="col-md-4">
-          <label for="numNailsInput">Number of Pins</label>
-          <input type="number" id="numNailsInput" class="form-control" value="288" min="10" max="1000">
-        </div>
-        <div class="col-md-4">
-          <label for="numLinesInput">Number of Lines</label>
-          <input type="number" id="numLinesInput" class="form-control" value="4000" min="100" max="10000">
-        </div>
-        <div class="col-md-4">
-          <label for="lineWeightInput">Line Weight</label>
-          <input type="number" id="lineWeightInput" class="form-control" value="1" min="1" max="10">
-        </div>
-      </div>
-      <div class="text-center mt-4">
-        <input type="file" id="imageInput" accept="image/*" class="btn btn-primary">
-        <button id="startButton" class="btn btn-success">Generate String Art</button>
-      </div>
-      <p id="status" class="text-center mt-3">Status: Waiting for input...</p>
-    </div>
-    <canvas id="outputCanvas" class="d-block mx-auto" width="500" height="500"></canvas>
-  </div>
-
   <script>
-    let img; // Image to process
-    let nails = [];
-    let lines = [];
-    let numNails = 288; // Default number of nails
-    let numLines = 4000; // Default number of lines
-    let lineWeight = 1; // Default line weight
-    let imageLoaded = false;
+    let img; // متغير لتحميل الصورة
+    const numLines = 1000; // عدد الخطوط المرسومة
+    const points = []; // نقاط الحدود التي سيستخدمها الرسم
+
+    function preload() {
+      // تحميل الصورة المرفوعة
+      img = loadImage('path/to/your/image.jpg'); // استبدل الرابط بالصورة المرفوعة
+    }
 
     function setup() {
-      noCanvas();
-      document.getElementById('startButton').addEventListener('click', () => {
-        numNails = parseInt(document.getElementById('numNailsInput').value);
-        numLines = parseInt(document.getElementById('numLinesInput').value);
-        lineWeight = parseInt(document.getElementById('lineWeightInput').value);
-
-        if (imageLoaded) {
-          generateStringArt();
-        } else {
-          alert("Please upload an image first!");
-        }
-      });
-
-      document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+      createCanvas(800, 800); // إنشاء لوحة الرسم
+      img.resize(800, 800); // إعادة تحجيم الصورة
+      img.filter(GRAY); // تحويل الصورة إلى الأبيض والأسود
+      generateBorderPoints(); // إنشاء نقاط الحدود
+      drawStringArt(); // رسم التأثير
     }
 
-    function handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          loadImage(e.target.result, (loadedImage) => {
-            img = loadedImage;
-            img.resize(500, 500);
-            img.loadPixels();
-            imageLoaded = true;
-            document.getElementById('status').textContent = "Image loaded successfully!";
-          }, () => {
-            console.error("Failed to load image.");
-          });
-        };
-        reader.readAsDataURL(file);
-      }
+    function draw() {
+      noLoop(); // توقف الرسم بعد الإطار الأول
     }
 
-    function generateStringArt() {
-      document.getElementById('status').textContent = "Generating string art...";
-      nails = [];
-      lines = [];
-
-      let centerX = 250;
-      let centerY = 250;
-      let radius = 200;
-
-      for (let i = 0; i < numNails; i++) {
-        let angle = TWO_PI * i / numNails;
-        let x = centerX + radius * cos(angle);
-        let y = centerY + radius * sin(angle);
-        nails.push({ x, y });
+    function generateBorderPoints() {
+      const steps = 200; // عدد النقاط على الحدود
+      for (let i = 0; i < steps; i++) {
+        // النقاط العلوية
+        points.push({ x: (width / steps) * i, y: 0 });
+        // النقاط اليمنى
+        points.push({ x: width, y: (height / steps) * i });
+        // النقاط السفلية
+        points.push({ x: (width / steps) * (steps - i), y: height });
+        // النقاط اليسرى
+        points.push({ x: 0, y: (height / steps) * (steps - i) });
       }
-
-      let currentNail = 0;
-      for (let i = 0; i < numLines; i++) {
-        let bestNail = -1;
-        let bestScore = -Infinity;
-
-        for (let j = 0; j < nails.length; j++) {
-          if (j === currentNail) continue;
-
-          let intensity = calculateLineIntensity(nails[currentNail], nails[j]);
-          if (intensity > bestScore) {
-            bestScore = intensity;
-            bestNail = j;
-          }
-        }
-
-        if (bestNail >= 0) {
-          lines.push([currentNail, bestNail]);
-          currentNail = bestNail;
-        } else {
-          break;
-        }
-      }
-
-      drawStringArt();
-    }
-
-    function calculateLineIntensity(start, end) {
-      let x1 = Math.floor(start.x);
-      let y1 = Math.floor(start.y);
-      let x2 = Math.floor(end.x);
-      let y2 = Math.floor(end.y);
-
-      let dx = Math.abs(x2 - x1);
-      let dy = Math.abs(y2 - y1);
-
-      let sx = x1 < x2 ? 1 : -1;
-      let sy = y1 < y2 ? 1 : -1;
-      let err = dx - dy;
-
-      let sum = 0;
-
-      while (true) {
-        let index = (y1 * img.width + x1) * 4;
-        sum += 255 - img.pixels[index];
-
-        if (x1 === x2 && y1 === y2) break;
-
-        let e2 = err * 2;
-        if (e2 > -dy) {
-          err -= dy;
-          x1 += sx;
-        }
-        if (e2 < dx) {
-          err += dx;
-          y1 += sy;
-        }
-      }
-
-      return sum;
     }
 
     function drawStringArt() {
-      const canvas = document.getElementById('outputCanvas');
-      const ctx = canvas.getContext('2d');
+      background(0); // خلفية سوداء
+      stroke(255); // لون الخطوط أبيض
+      strokeWeight(0.5); // سماكة الخطوط
+      noFill();
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = "black";
-      ctx.lineWidth = lineWeight;
+      let currentPoint = points[0]; // النقطة الابتدائية
+      for (let i = 0; i < numLines; i++) {
+        let bestPoint;
+        let bestValue = 0;
 
-      for (let [startIdx, endIdx] of lines) {
-        const start = nails[startIdx];
-        const end = nails[endIdx];
+        for (const p of points) {
+          const brightnessValue = getBrightnessValue(p.x, p.y);
+          if (brightnessValue > bestValue) {
+            bestValue = brightnessValue;
+            bestPoint = p;
+          }
+        }
 
-        ctx.beginPath();
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.stroke();
+        // رسم خط بين النقطة الحالية وأفضل نقطة
+        line(currentPoint.x, currentPoint.y, bestPoint.x, bestPoint.y);
+
+        // تحديث النقطة الحالية
+        currentPoint = bestPoint;
       }
+    }
 
-      document.getElementById('status').textContent = "String art complete!";
+    function getBrightnessValue(x, y) {
+      // استرجاع السطوع عند نقطة معينة
+      const color = img.get(floor(x), floor(y));
+      return brightness(color);
     }
   </script>
 </body>
